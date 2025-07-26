@@ -92,23 +92,6 @@ BioVault/
 
 ---
 
-## 📈 Future Enhancements
-
-- 🔄 Browser extension for autofill
-- ☁️ Cloud sync (end-to-end encrypted)
-- 🧑‍💻 Multiple user support
-- 📱 Android Companion App
-
----
-
-## 🧠 Authors & Contributors
-
-- 💡 Idea & Architecture: [Your Name]
-- 💻 Java Module: [Contributor 1]
-- 🧠 Python Biometric: [Contributor 2]
-
----
-
 ## 📜 License
 
-MIT License. Feel free to fork, use, and contribute!
+MIT License.
