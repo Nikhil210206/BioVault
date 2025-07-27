@@ -36,7 +36,6 @@ BioVault/
 │
 └── README.md
 
-
 🔁 Biometric + VPN Workflow
 1-> JavaFX GUI takes webcam and mic input.
 
