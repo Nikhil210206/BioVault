@@ -17,24 +17,23 @@ future scopes(auto suggestions)
 📂 Project Folder Structure
 
 BioVault/
+├── java-app/                    # JavaFX GUI + Vault + VPN logic
+│   ├── src/                     # Java source files
+│   ├── vault/                   # Vault management (AES encryption, DB)
+│   └── utils/                   # Java helper utilities
 │
-├── java-app/                        # JavaFX frontend + AES + VPN
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── ui/                  # JavaFX UI files (FXML/CSS)
-│   │   │   ├── vpn/                 # VPN connection logic
-│   │   │   ├── encryption/          # AES encryption/decryption
-│   │   │   ├── vault/               # Password vault logic using SQLite
-│   │   │   └── api/                 # Java ↔ Python HTTP communication
-│   └── pom.xml or build.gradle      # Java dependencies
+├── biometric-auth-server/      # Python Flask server for biometrics
+│   ├── app.py                   # Main Flask app
+│   ├── face_module.py           # Face recognition logic
+│   ├── voice_module.py          # Voice recognition logic
+│   └── utils/                   # Preprocessing (OpenCV, audio)
 │
-├── biometric-auth-server/          # Python Flask server for biometrics
-│   ├── app.py                      # REST API endpoints (e.g., /verify)
-│   ├── face_module.py             # Face recognition logic
-│   ├── voice_module.py            # Voice recognition logic
-│   └── utils/                     # Preprocessing helpers (OpenCV, NumPy, etc.)
+├── vpn/                         # (Optional) Java VPN logic
+│   ├── vpnClient.java           # VPN client code
+│   └── vpnUtils.java            # VPN helper functions
 │
-└── README.md
+└── README.md                    # Project documentation
+
 
 🔁 Biometric + VPN Workflow
 1-> JavaFX GUI takes webcam and mic input.
