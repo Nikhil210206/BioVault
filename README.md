@@ -1,96 +1,77 @@
 
-# 🔐 BioVault – A Biometric-Based Password Manager
+🧠 🔐 BioVault – A Biometric-Based Password Vault with VPN Integration
+👁️‍🗨️ Overview
+BioVault is a secure desktop password manager that:
 
-**BioVault** is a secure desktop password manager that uses **face and voice recognition** as the sole authentication mechanism, replacing traditional passwords.
+Authenticates users using face and voice recognition
 
-## 🚀 Features
+Unlocks the vault only when connected to a secure VPN
 
-- 🔐 Securely store and manage passwords
-- 🧠 Biometric authentication using **Face** and **Voice**
-- 🧊 AES-encrypted vault storage
-- 🧬 Hybrid architecture: Java for frontend/backend, Python for biometric processing
-- 📦 Auto-suggest passwords on login (future scope)
+Uses AES encryption for vault safety
 
----
+Developed using Java (JavaFX) and Python (Flask)
 
-## 🏗️ Architecture Overview
-
-| Layer              | Technology Used                         |
-|-------------------|------------------------------------------|
-| GUI + Vault        | Java (JavaFX, SQLite, AES)               |
-| Biometric Auth     | Python (Flask, face_recognition, Resemblyzer/speechbrain) |
-| Communication      | REST API (Java ↔ Python via HTTP)        |
+future scopes(auto suggestions)
 
 ---
+📂 Project Folder Structure
 
-## 🛠️ Tech Stack
-
-### Java
-- JavaFX (UI)
-- SQLite via JDBC (Vault DB)
-- AES encryption (javax.crypto)
-- HTTP Client (Java 11+)
-
-### Python
-- Flask (API server)
-- `face_recognition` (Face match)
-- `Resemblyzer` or `speechbrain` (Voiceprint match)
-- OpenCV, NumPy, soundfile (Preprocessing)
-
----
-
-## 🔁 Biometric Workflow
-
-1. Java GUI captures webcam and mic input.
-2. Sends it to Python Flask server over HTTP.
-3. Python validates face + voice match.
-4. If match, server returns `success` → Java unlocks vault.
-5. If mismatch, access is denied.
-
----
-
-## 📁 Folder Structure
-
-```
 BioVault/
 │
-├── java-app/                    # JavaFX GUI + vault logic
+├── java-app/                        # JavaFX frontend + AES + VPN
 │   ├── src/
-│   ├── vault/
-│   └── utils/
+│   │   ├── main/
+│   │   │   ├── ui/                  # JavaFX UI files (FXML/CSS)
+│   │   │   ├── vpn/                 # VPN connection logic
+│   │   │   ├── encryption/          # AES encryption/decryption
+│   │   │   ├── vault/               # Password vault logic using SQLite
+│   │   │   └── api/                 # Java ↔ Python HTTP communication
+│   └── pom.xml or build.gradle      # Java dependencies
 │
-├── biometric-auth-server/      # Python Flask server
-│   ├── app.py
-│   ├── face_module.py
-│   ├── voice_module.py
-│   └── utils/
+├── biometric-auth-server/          # Python Flask server for biometrics
+│   ├── app.py                      # REST API endpoints (e.g., /verify)
+│   ├── face_module.py             # Face recognition logic
+│   ├── voice_module.py            # Voice recognition logic
+│   └── utils/                     # Preprocessing helpers (OpenCV, NumPy, etc.)
 │
 └── README.md
-```
 
----
+🔁 Biometric + VPN Workflow
+1-> JavaFX GUI takes webcam and mic input.
 
-## 🧪 Sample API (Python Flask)
+2-> Sends input to Python Flask server (/verify) using HttpClient.
 
-**Endpoint:** `POST /verify`
+3-> Python verifies face and voice match.
 
-**Request JSON:**
-```json
-{
-  "face_image_base64": "<encoded_face_image>",
-  "voice_clip_base64": "<encoded_voice_clip>"
-}
-```
+4-> On success, Java triggers VPN connection (e.g., using ProcessBuilder or embedded VPN library).
 
-**Response:**
-```json
-{
-  "face_match": true,
-  "voice_match": true
-}
-```
+5-> Once VPN is live, Java decrypts AES vault and unlocks UI.
 
----
+
+🔐 Tech Stack
+
+| Layer             | Technology                              |
+| ----------------- | --------------------------------------- |
+| Frontend GUI      | JavaFX + FXML                           |
+| Vault DB          | SQLite + JDBC                           |
+| Encryption        | AES (javax.crypto)                      |
+| VPN Integration   | Java Networking / VPN client            |
+| API Bridge        | Java HTTPClient + Python Flask          |
+| Face Auth         | `face_recognition` (Python)             |
+| Voice Auth        | `speechbrain` or `Resemblyzer` (Python) |
+| Audio/Image Tools | OpenCV, NumPy, soundfile                |
+
+
+🔐 Future Ideas
+Auto suggestion to access passwords while login promts
+Auto-lock vault on network disconnect
+
+OTP fallback if biometrics fail
+
+Vault activity log with timestamps
+
+2FA integration (TOTP or Email-based)
+
 
 ## 📜 License
 
