@@ -72,28 +72,6 @@ BioVault/
 | Voice Auth        | `speechbrain` or `Resemblyzer` (Python) |
 | Audio/Image Tools | OpenCV, NumPy, soundfile                |
 
----
-
-## 💡 Future Ideas
-
-- Auto-suggestion to access passwords while on login prompts
-- Auto-lock vault on network disconnect
-- OTP fallback if biometrics fail
-- Vault activity log with timestamps
-- 2FA integration (TOTP or Email-based)
-
----
-
-## 📦 Installation
-
-> **Note:** Detailed setup instructions coming soon!
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/BioVault.git
-   cd BioVault
-   ```
-2. Follow setup instructions in `java-app/` and `biometric-auth-server/` folders.
 
 ---
 
@@ -103,18 +81,6 @@ BioVault/
 - Ensure the Python Flask server is running for biometric verification.
 - Connect to a VPN (if not handled automatically).
 - Use the GUI to manage your passwords securely.
-
----
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome!
-
-1. Fork the repo
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ---
 
