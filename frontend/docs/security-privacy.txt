@@ -1,0 +1,419 @@
+================================================================================
+BIOVAULT SECURITY & PRIVACY DOCUMENTATION
+================================================================================
+
+Version: 1.0
+Last Updated: January 2025
+Document Purpose: Technical security and privacy documentation for BioVault
+
+================================================================================
+1. SECURITY ARCHITECTURE
+================================================================================
+
+1.1 Encryption Standards
+-------------------------
+- Data at Rest: AES-256-GCM (Galois/Counter Mode)
+- Data in Transit: TLS 1.3 with perfect forward secrecy
+- Key Derivation: PBKDF2-SHA256 with 100,000 iterations
+- Password Hashing: Argon2id (recommended) or bcrypt
+
+1.2 Biometric Data Processing
+------------------------------
+- CLIENT-SIDE PROCESSING: Face alignment, cropping, and feature extraction
+  performed locally on user's device using JavaScript/WebAssembly
+
+- EMBEDDING GENERATION: Mathematical representation of biometric features
+  created client-side. Original images/audio NOT sent to server by default.
+
+- ENCRYPTION BEFORE TRANSMISSION: Embeddings encrypted with user's master
+  key before leaving the device.
+
+- SERVER STORAGE: Only encrypted embeddings stored. Original raw biometric
+  data (images, audio) is NOT stored unless user explicitly opts-in with
+  informed consent.
+
+1.3 Zero-Knowledge Architecture
+--------------------------------
+BioVault implements a zero-knowledge architecture where:
+
+- Server cannot decrypt user's biometric embeddings without user's master key
+- Master key is derived from user's password + biometric proof
+- Server stores only:
+  * Encrypted biometric embeddings
+  * Encrypted password vault entries
+  * Metadata (timestamps, device info, encrypted)
+  * Session tokens (temporary, revocable)
+
+1.4 Authentication Flow
+------------------------
+ENROLLMENT:
+  1. User captures face/voice locally
+  2. Client extracts features and generates embedding (local processing)
+  3. Embedding encrypted with user's master key
+  4. Encrypted embedding sent to server over TLS
+  5. Server stores encrypted embedding + metadata
+  6. Original capture deleted from client memory
+
+UNLOCK:
+  1. User presents biometric (face/voice)
+  2. Client generates embedding from live capture
+  3. Client requests encrypted stored embedding from server
+  4. Client decrypts stored embedding locally
+  5. Client performs similarity match (local)
+  6. If match score > threshold (80%), generate unlock token
+  7. Token sent to server for session creation
+
+================================================================================
+2. DATA STORAGE & RETENTION
+================================================================================
+
+2.1 What We Store (Default Settings)
+-------------------------------------
+✓ Encrypted biometric embeddings (128-512 dimensional vectors)
+✓ Enrollment timestamps (ISO 8601 format, UTC)
+✓ Device metadata (user agent, IP address hash)
+✓ Session logs (login/logout times, authentication method)
+✓ Encrypted vault entries (passwords, notes)
+✓ User account info (name, email, username - all encrypted)
+
+2.2 What We DO NOT Store (Default Settings)
+--------------------------------------------
+✗ Raw face images or photographs
+✗ Raw audio recordings or voice samples
+✗ Plaintext passwords or sensitive data
+✗ Unencrypted user information
+✗ Biometric templates without user consent
+
+2.3 Optional Raw Data Storage
+------------------------------
+Users can enable "Store Raw Biometric Data" in Settings:
+
+- Requires explicit, informed consent (checkbox + confirmation dialog)
+- Consent timestamp and IP address logged
+- Raw images/audio encrypted with separate key
+- User can view what raw data is stored
+- User can delete raw data at any time
+- Raw data retention: 90 days (configurable, min 30 days)
+
+CONSENT FLOW:
+  1. User toggles "Save Raw Biometric Data" in Settings
+  2. Warning dialog explains risks and implications
+  3. User must type confirmation phrase: "I CONSENT TO STORING RAW DATA"
+  4. Consent timestamp recorded in audit log
+  5. Raw data storage enabled (can be revoked anytime)
+
+2.4 Data Retention Periods
+---------------------------
+- Encrypted Embeddings: Retained while account active
+- Session Logs: 90 days (rolling window)
+- Audit Logs: 1 year (compliance requirement)
+- Deleted Account Data: 30-day soft delete, then permanent deletion
+- Raw Biometric Data (if opted-in): 90 days, then auto-deleted
+
+2.5 Data Deletion
+------------------
+Users can permanently delete:
+- All biometric data (face, voice, or both)
+- Individual authentication methods
+- Entire account (including all associated data)
+
+SECURE DELETION PROCESS:
+  1. User requests deletion from Settings page
+  2. Confirmation code required: "DELETE-ALL-BIOMETRICS"
+  3. Data marked for deletion in database
+  4. Background job performs cryptographic erasure
+  5. Deletion confirmation sent to user's email
+  6. Audit log entry created (anonymized)
+  7. Data recovery impossible after 30 days
+
+================================================================================
+3. PRIVACY CONTROLS
+================================================================================
+
+3.1 User Privacy Rights (GDPR/CCPA Compliant)
+----------------------------------------------
+- Right to Access: Download all stored data in JSON format
+- Right to Deletion: Permanently delete account and all data
+- Right to Portability: Export encrypted vault data
+- Right to Rectification: Update or correct stored information
+- Right to Object: Opt-out of optional data collection
+- Right to Restrict: Limit data processing to essential operations
+
+3.2 VPN-Only Unlock Mode
+-------------------------
+Advanced security feature for high-risk users:
+
+- When enabled, vault unlock requires verified VPN connection
+- Server checks for VPN indicators:
+  * IP address belongs to known VPN providers
+  * DNS leak tests
+  * WebRTC leak checks
+- Unlock request denied if VPN not detected
+- User notified of failed VPN verification
+
+IMPLEMENTATION:
+  Backend verifies:
+  - User's IP against VPN provider databases
+  - DNS resolution consistency
+  - GeoIP location anomalies
+  - Known VPN IP ranges
+
+3.3 Two-Factor Authentication (2FA)
+------------------------------------
+Optional additional security layer:
+
+- TOTP (Time-based One-Time Password) support
+- Backup codes for account recovery
+- Biometric + OTP required for unlock
+- 2FA can be enforced org-wide (enterprise feature)
+
+3.4 Privacy-Preserving Analytics
+---------------------------------
+BioVault collects minimal, anonymized telemetry:
+
+- Authentication success/failure rates (aggregated)
+- Feature usage statistics (no PII)
+- Performance metrics (load times, error rates)
+- Device/browser compatibility data
+
+ALL analytics are:
+- Opt-out available in Settings
+- Anonymized (no user identification)
+- Aggregated (no individual tracking)
+- Minimal (only essential for service improvement)
+
+================================================================================
+4. THREAT MODEL & MITIGATIONS
+================================================================================
+
+4.1 Identified Threats
+-----------------------
+1. Man-in-the-Middle (MITM) Attack
+   - Mitigation: TLS 1.3 with certificate pinning
+   - Mitigation: HSTS (HTTP Strict Transport Security) enabled
+
+2. Replay Attack
+   - Mitigation: Nonce-based authentication
+   - Mitigation: Short-lived session tokens (1 hour expiry)
+   - Mitigation: Timestamp verification (±5 minute window)
+
+3. Biometric Spoofing (Presentation Attack)
+   - Mitigation: Liveness detection (client-side)
+   - Mitigation: Challenge-response protocol
+   - Mitigation: Multi-modal authentication (face + voice)
+
+4. Credential Stuffing
+   - Mitigation: Rate limiting (20 attempts/hour)
+   - Mitigation: Account lockout after 5 failed attempts
+   - Mitigation: IP-based throttling
+
+5. Database Breach
+   - Mitigation: All sensitive data encrypted at rest
+   - Mitigation: Separate encryption keys per user
+   - Mitigation: Master keys never stored on server
+   - Mitigation: Compromised embeddings useless without decryption key
+
+6. Insider Threat
+   - Mitigation: Zero-knowledge architecture
+   - Mitigation: Audit logs (immutable, timestamped)
+   - Mitigation: Multi-signature access controls
+   - Mitigation: Principle of least privilege
+
+4.2 Security Boundaries
+------------------------
+CLIENT TRUST BOUNDARY:
+  - User's device is considered trusted
+  - Biometric processing happens client-side
+  - Master keys never leave client device
+  - Client responsible for secure key storage
+
+SERVER TRUST BOUNDARY:
+  - Server considered "honest but curious"
+  - Server stores only encrypted data
+  - Server cannot decrypt without user's cooperation
+  - Server provides availability and integrity
+
+NETWORK TRUST BOUNDARY:
+  - Network considered untrusted/hostile
+  - All communication encrypted with TLS 1.3
+  - No sensitive data sent in URL parameters
+  - CSRF tokens for state-changing operations
+
+================================================================================
+5. COMPLIANCE & AUDITING
+================================================================================
+
+5.1 Regulatory Compliance
+--------------------------
+- GDPR (General Data Protection Regulation) - EU
+- CCPA (California Consumer Privacy Act) - US
+- BIPA (Biometric Information Privacy Act) - Illinois
+- HIPAA-ready (for healthcare deployments)
+- SOC 2 Type II audit (annual)
+
+5.2 Security Audits
+--------------------
+- Quarterly internal security reviews
+- Annual third-party penetration testing
+- Code security audits (SAST + DAST)
+- Dependency vulnerability scanning (daily)
+- Bug bounty program (responsible disclosure)
+
+5.3 Audit Logging
+------------------
+All security-relevant events logged:
+- User registration / account creation
+- Biometric enrollment (face, voice)
+- Authentication attempts (success/failure)
+- Password changes
+- Settings modifications
+- Data exports
+- Biometric data deletion
+- Account deletion
+
+LOG FORMAT:
+  {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "eventType": "auth.failed",
+    "userId": "hashed-user-id",
+    "metadata": {
+      "method": "face",
+      "confidence": 0.45,
+      "ipHash": "sha256-hash",
+      "userAgent": "redacted"
+    }
+  }
+
+Logs are:
+- Encrypted at rest
+- Immutable (append-only)
+- Retained for 1 year
+- Anonymized after retention period
+
+================================================================================
+6. INCIDENT RESPONSE
+================================================================================
+
+6.1 Security Incident Procedure
+--------------------------------
+1. Detection: Automated monitoring detects anomaly
+2. Containment: Affected systems isolated
+3. Investigation: Root cause analysis performed
+4. Remediation: Vulnerability patched/fixed
+5. Notification: Affected users notified within 72 hours (GDPR requirement)
+6. Review: Post-incident review and lessons learned
+
+6.2 Data Breach Notification
+-----------------------------
+In the event of a data breach:
+- Users notified within 72 hours (GDPR requirement)
+- Breach details disclosed (what, when, impact)
+- Remediation steps provided
+- Credit monitoring offered (if applicable)
+- Regulatory authorities notified (as required)
+
+6.3 User Notification Channels
+-------------------------------
+- Email (primary)
+- In-app notification
+- Security advisory on website
+- Blog post (for major incidents)
+
+================================================================================
+7. DEVELOPER SECURITY GUIDELINES
+================================================================================
+
+7.1 Secure Coding Practices
+----------------------------
+- Input validation on all user inputs
+- Parameterized queries (prevent SQL injection)
+- Content Security Policy (CSP) headers
+- XSS (Cross-Site Scripting) protection
+- CSRF (Cross-Site Request Forgery) tokens
+- Secure session management
+- Regular dependency updates
+
+7.2 Biometric SDK Integration
+------------------------------
+RECOMMENDED LIBRARIES:
+- Face Recognition: face-api.js, MediaPipe Face Mesh
+- Voice Recognition: Web Audio API + speaker-recognition
+- Liveness Detection: Custom WebGL-based detection
+
+INTEGRATION CHECKLIST:
+  [ ] Process biometrics client-side only
+  [ ] Never send raw images/audio to server (default)
+  [ ] Encrypt embeddings before transmission
+  [ ] Implement liveness detection
+  [ ] Add quality checks (resolution, lighting, noise)
+  [ ] Handle errors gracefully (no sensitive info in logs)
+  [ ] Test with prefers-reduced-motion enabled
+  [ ] Accessibility: keyboard navigation, screen reader support
+
+7.3 Testing Security
+---------------------
+- Unit tests for crypto functions
+- Integration tests for auth flows
+- E2E tests for biometric enrollment
+- Fuzzing for input validation
+- Penetration testing (annual)
+- Code review (peer + security team)
+
+================================================================================
+8. USER SECURITY BEST PRACTICES
+================================================================================
+
+8.1 For Users
+--------------
+✓ Use a strong fallback password (12+ characters, mixed case, symbols)
+✓ Enable two-factor authentication (2FA)
+✓ Keep device software updated
+✓ Use BioVault on trusted devices only
+✓ Review session logs regularly
+✓ Enable VPN-only mode for high-security scenarios
+✓ Report suspicious activity immediately
+
+✗ Don't share your device while logged in
+✗ Don't use BioVault on public/shared computers
+✗ Don't disable security features without understanding risks
+✗ Don't ignore security warnings
+
+8.2 For Developers
+-------------------
+✓ Keep dependencies updated (npm audit)
+✓ Follow secure coding guidelines
+✓ Never log sensitive data (passwords, embeddings)
+✓ Use environment variables for secrets
+✓ Implement proper error handling
+✓ Test accessibility features
+✓ Document security decisions
+
+================================================================================
+9. CONTACT & SUPPORT
+================================================================================
+
+Security Issues:
+  Email: security@biovault.dev
+  PGP Key: [Key ID: 0xABCD1234]
+
+Bug Bounty Program:
+  URL: https://biovault.dev/security/bug-bounty
+  Scope: In-scope security vulnerabilities
+  Rewards: Up to $10,000 USD
+
+General Support:
+  Email: support@biovault.dev
+  Website: https://docs.biovault.dev
+
+Legal/Privacy:
+  Email: privacy@biovault.dev
+  Data Protection Officer: dpo@biovault.dev
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
+Document Classification: Public
+Distribution: Unrestricted
+Review Cycle: Quarterly
+Next Review: April 2025
