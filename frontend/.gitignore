@@ -1,0 +1,37 @@
+# Dependencies
+/node_modules
+/dist
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Build files
+/dist
+/build
+
+# Bun lockfile
+bun.lockb
+
+# Test coverage
+/coverage
