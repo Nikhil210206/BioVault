@@ -3,7 +3,7 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 // Simulate network delay for realistic demo
 const mockDelay = (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms));
@@ -52,15 +52,13 @@ apiClient.interceptors.response.use(
  * @returns {Promise} User registration response
  */
 export const registerUser = async (userData) => {
-  await mockDelay(1200);
-  console.log('API: Register user', userData);
-  
-  // Mock response
-  return {
-    success: true,
-    userId: `user_${Date.now()}`,
-    message: 'User registered successfully',
-  };
+  try {
+    const response = await apiClient.post('/register', userData);
+    return response.data;
+  } catch (error) {
+    console.error('Registration failed:', error);
+    return { success: false, message: 'Registration failed' };
+  }
 };
 
 /**

@@ -1,0 +1,7 @@
+com\biovault\User.class
+com\biovault\UserService.class
+com\biovault\BioVaultApplication.class
+com\biovault\UserController.class
+com\biovault\UserController$RegisterRequest.class
+com\biovault\UserRepository.class
+com\biovault\UserController$RegisterResponse.class
