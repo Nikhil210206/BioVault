@@ -7,4 +7,4 @@
 - [x] Create UserService.java
 - [x] Create UserController.java with /register endpoint
 - [x] Update frontend/src/lib/apiClient.js baseURL to http://localhost:8080
-- [] Test the connection
+- [x] Test the connection
