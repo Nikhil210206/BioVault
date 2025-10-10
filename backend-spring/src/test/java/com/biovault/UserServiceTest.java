@@ -20,16 +20,12 @@ public class UserServiceTest {
 
     @Test
     public void testCreateAndFindUser() {
-        User user = new User();
-        user.setUsername("serviceuser");
-        user.setPassword("servicepass");
-
         // Create user via service
-        User createdUser = userService.saveUser(user);
+        User createdUser = userService.registerUser("Service User", "service@test.com", "serviceuser", "servicepass");
         assertThat(createdUser.getId()).isNotNull();
 
-        // Find user via service
-        User foundUser = userService.getUserById(createdUser.getId());
+        // Find user via repository (since the service doesn't have a find method)
+        User foundUser = userRepository.findByUsername("serviceuser");
         assertThat(foundUser).isNotNull();
         assertThat(foundUser.getUsername()).isEqualTo("serviceuser");
 

@@ -20,7 +20,7 @@ public class UserRepositoryTest {
     public void testCreateReadDeleteUser() {
         User user = new User();
         user.setUsername("testuser");
-        user.setPassword("testpass");
+        user.setPasswordHash("testpass"); // Corrected method name
 
         // Create
         user = userRepository.save(user);
