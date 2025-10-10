@@ -18,4 +18,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Authenticates a user.
+     * For now, this is a mock implementation that just finds the user.
+     * We will add real password/biometric checking later.
+     * @param username The username to check.
+     * @return The User if found, otherwise null.
+     */
+    public User unlockUser(String username) {
+        // In a real application, you would also check the password or biometric proof here.
+        return userRepository.findByUsername(username);
+    }
 }
