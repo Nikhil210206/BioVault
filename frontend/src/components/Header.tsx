@@ -85,13 +85,23 @@ const Header = () => {
               )}
             </motion.button>
 
-            <Link to="/register">
+            <Link to="/login">
               <motion.button
                 {...(shouldReduce ? {} : buttonTap)}
                 whileHover={shouldReduce ? {} : { scale: 1.02 }}
                 className="px-4 py-2 rounded-lg bg-accent text-accent-foreground font-medium hover:opacity-90 transition-opacity"
               >
-                Get Started
+                Login
+              </motion.button>
+            </Link>
+
+            <Link to="/register">
+              <motion.button
+                {...(shouldReduce ? {} : buttonTap)}
+                whileHover={shouldReduce ? {} : { scale: 1.02 }}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+              >
+                Register
               </motion.button>
             </Link>
           </div>

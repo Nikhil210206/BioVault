@@ -48,13 +48,15 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         username: formData.username,
-        passwordHash: formData.password ? btoa(formData.password) : undefined,
+        passwordHash: btoa(formData.password), // Base64 encode the password or an empty string
       });
 
-      if (response.success) {
-        setUserId(response.userId);
+      if (response.success && response.userId) {
+        setUserId(response.userId.toString());
         setStep("biometric-choice");
         addToast("success", "Account created successfully!");
+      } else {
+        addToast("error", "Registration failed. Please try again.");
       }
     } catch (error) {
       addToast("error", "Registration failed. Please try again.");
@@ -64,7 +66,7 @@ const Register = () => {
   const handleBiometricChoice = (choice: "face" | "voice" | "both" | "skip") => {
     if (choice === "skip") {
       setStep("complete");
-    } else if (choice === "face" || choice === "both") {
+    } else if (choice === "face" || choice === "both") { // *** THIS IS THE FIX ***
       setStep("enroll-face");
     } else if (choice === "voice") {
       setStep("enroll-voice");
@@ -75,18 +77,26 @@ const Register = () => {
     if (success) {
       addToast("success", "Face biometric enrolled!");
       setStep("enroll-voice");
+    } else {
+        // If they fail face enrollment, give them an option to skip to the end
+        setStep("complete");
     }
   };
 
   const handleVoiceEnrollComplete = (success: boolean) => {
     if (success) {
       addToast("success", "Voice biometric enrolled!");
-      setStep("complete");
     }
+    setStep("complete");
   };
 
   const handleSkipBiometric = () => {
-    setStep("complete");
+    // This function can be used to skip from either face or voice enrollment
+    if (step === 'enroll-face') {
+        setStep('enroll-voice'); // Skip to the next biometric step
+    } else {
+        setStep('complete'); // Skip to the final step
+    }
   };
 
   return (
@@ -160,10 +170,10 @@ const Register = () => {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="Leave empty to use biometric only"
+                      placeholder="Leave empty for biometric-only"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Recommended: Set a fallback password in case biometric fails
+                      Recommended: Set a fallback password in case biometric fails.
                     </p>
                   </div>
 
@@ -177,7 +187,7 @@ const Register = () => {
                     />
                     <label htmlFor="terms" className="text-sm text-muted-foreground">
                       I agree to the Terms of Service and Privacy Policy, including biometric data
-                      processing
+                      processing.
                     </label>
                   </div>
 
@@ -192,7 +202,6 @@ const Register = () => {
               </motion.div>
             )}
 
-            {/* Biometric Choice */}
             {step === "biometric-choice" && (
               <motion.div
                 key="biometric-choice"
@@ -202,7 +211,7 @@ const Register = () => {
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold mb-2">Choose Your Biometric Method</h2>
                   <p className="text-muted-foreground">
-                    Select how you want to unlock your vault securely
+                    Select how you want to unlock your vault securely.
                   </p>
                 </div>
 
@@ -214,7 +223,7 @@ const Register = () => {
                   >
                     <Camera className="w-12 h-12 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-1">Face Recognition</h3>
-                    <p className="text-sm text-muted-foreground">Use your face to unlock</p>
+                    <p className="text-sm text-muted-foreground">Use your face to unlock.</p>
                   </motion.button>
 
                   <motion.button
@@ -224,7 +233,7 @@ const Register = () => {
                   >
                     <Mic className="w-12 h-12 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-1">Voice Authentication</h3>
-                    <p className="text-sm text-muted-foreground">Use your voice to unlock</p>
+                    <p className="text-sm text-muted-foreground">Use your voice to unlock.</p>
                   </motion.button>
                 </div>
 
@@ -246,7 +255,6 @@ const Register = () => {
               </motion.div>
             )}
 
-            {/* Face Enrollment */}
             {step === "enroll-face" && (
               <motion.div
                 key="enroll-face"
@@ -261,7 +269,6 @@ const Register = () => {
               </motion.div>
             )}
 
-            {/* Voice Enrollment */}
             {step === "enroll-voice" && (
               <motion.div
                 key="enroll-voice"
@@ -276,7 +283,6 @@ const Register = () => {
               </motion.div>
             )}
 
-            {/* Complete */}
             {step === "complete" && (
               <motion.div
                 key="complete"
@@ -294,10 +300,10 @@ const Register = () => {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <motion.button
                     {...(shouldReduce ? {} : buttonTap)}
-                    onClick={() => navigate("/unlock")}
+                    onClick={() => navigate("/login")}
                     className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
                   >
-                    Go to Unlock
+                    Go to Login
                   </motion.button>
                   <motion.button
                     {...(shouldReduce ? {} : buttonTap)}

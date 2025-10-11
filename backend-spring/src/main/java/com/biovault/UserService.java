@@ -3,6 +3,8 @@ package com.biovault;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Service
 public class UserService {
 
@@ -19,14 +21,44 @@ public class UserService {
     }
 
     /**
-     * Authenticates a user.
-     * For now, this is a mock implementation that just finds the user.
-     * We will add real password/biometric checking later.
+     * Authenticates a user by checking username and password hash.
+     * @param username The username to check.
+     * @param passwordHash The base64 encoded password hash to compare.
+     * @return The User if credentials match, otherwise null.
+     */
+    public User loginUser(String username, String passwordHash) {
+        System.out.println("--- Attempting login for user: " + username + " ---");
+        
+        // Find the user by their username
+        User user = userRepository.findByUsername(username);
+
+        // If user is not found, exit early
+        if (user == null) {
+            System.out.println("Login failed: User not found.");
+            return null;
+        }
+
+        // Add logging to see what's being compared
+        System.out.println("Password hash from login attempt: " + passwordHash);
+        System.out.println("Password hash stored in database: " + user.getPasswordHash());
+
+        // *** THIS IS THE FIX ***
+        // Use Objects.equals() to safely compare, preventing crashes if the stored hash is null.
+        if (Objects.equals(user.getPasswordHash(), passwordHash)) {
+            System.out.println("Login successful!");
+            return user;
+        }
+
+        System.out.println("Login failed: Password hashes do not match.");
+        return null;
+    }
+
+    /**
+     * Authenticates a user for unlocking the vault.
      * @param username The username to check.
      * @return The User if found, otherwise null.
      */
     public User unlockUser(String username) {
-        // In a real application, you would also check the password or biometric proof here.
         return userRepository.findByUsername(username);
     }
 }

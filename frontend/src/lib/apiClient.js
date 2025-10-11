@@ -1,18 +1,6 @@
-// apiClient.js - Mock API client for BioVault
-// Replace with actual backend endpoints in production
-
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api';
-
-// Simulate network delay for realistic demo
-const mockDelay = (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Mock responses
-const mockResponses = {
-  success: { success: true, message: 'Operation completed successfully' },
-  error: { success: false, message: 'Operation failed' },
-};
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -22,7 +10,7 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor for adding auth tokens
+// Request interceptor for adding auth tokens from localStorage
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -34,227 +22,132 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// General response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error);
-    return Promise.reject(error);
+    console.error('API Error:', error.response || error);
+    // Return a structured error to be handled by the calling function
+    return Promise.reject(error.response?.data || { success: false, message: 'An unknown error occurred' });
   }
 );
 
-// ============= API METHODS =============
+
+// ==================================================
+// REAL API METHODS (Connected to Spring Boot)
+// ==================================================
 
 /**
- * POST /api/auth/register
- * Register a new user
- * @param {Object} userData - { name, email, username, passwordHash? }
- * @returns {Promise} User registration response
+ * POST /api/register - Register a new user
  */
 export const registerUser = async (userData) => {
-  try {
-    const response = await apiClient.post('/register', userData);
-    return response.data;
-  } catch (error) {
-    console.error('Registration failed:', error);
-    return { success: false, message: 'Registration failed' };
-  }
+  const response = await apiClient.post('/register', userData);
+  return response.data;
 };
 
 /**
- * POST /api/biometrics/face/enroll
- * Enroll face biometric data
- * @param {Object} data - { userId, faceEmbedding: base64, metadata }
- * @returns {Promise} Enrollment response
+ * POST /api/login - Log in a user
  */
-export const enrollFace = async (data) => {
-  await mockDelay(2000);
-  console.log('API: Enroll face', data);
-  
-  return {
-    success: true,
-    enrollmentId: `face_${Date.now()}`,
-    confidence: 0.98,
-    message: 'Face biometric enrolled successfully',
-  };
+export const loginUser = async (credentials) => {
+  const response = await apiClient.post('/login', credentials);
+  return response.data;
 };
 
 /**
- * POST /api/biometrics/audio/enroll
- * Enroll voice biometric data
- * @param {Object} data - { userId, audioEmbedding: base64, metadata }
- * @returns {Promise} Enrollment response
- */
-export const enrollVoice = async (data) => {
-  await mockDelay(2500);
-  console.log('API: Enroll voice', data);
-  
-  return {
-    success: true,
-    enrollmentId: `voice_${Date.now()}`,
-    confidence: 0.95,
-    transcript: data.metadata?.transcript || 'Sample phrase captured',
-    message: 'Voice biometric enrolled successfully',
-  };
-};
-
-/**
- * POST /api/auth/unlock
- * Unlock vault with biometric or password
- * @param {Object} data - { userId, method, proof, otp? }
- * @returns {Promise} Authentication response
+ * POST /api/auth/unlock - Unlock the vault for a logged-in user
  */
 export const unlockVault = async (data) => {
+  const response = await apiClient.post('/auth/unlock', data);
+  return response.data;
+};
+
+
+// ==================================================
+// MOCKED API METHODS (Placeholders for future development)
+// ==================================================
+
+// Helper to simulate network delay
+const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * MOCKED - POST /api/biometrics/face/enroll
+ */
+export const enrollFace = async (data) => {
   await mockDelay(1500);
-  console.log('API: Unlock vault', data);
-  
-  // Simulate 90% success rate
-  const success = Math.random() > 0.1;
-  
-  if (success) {
-    return {
-      success: true,
-      token: `token_${Date.now()}`,
-      confidence: 0.96,
-      message: 'Vault unlocked successfully',
-      sessionId: `session_${Date.now()}`,
-    };
-  } else {
-    return {
-      success: false,
-      confidence: 0.45,
-      message: 'Biometric verification failed',
-    };
-  }
+  console.log('MOCK API: Enroll face', data);
+  return { success: true, enrollmentId: `face_${Date.now()}`, confidence: 0.98, message: 'Face biometric enrolled successfully' };
 };
 
 /**
- * GET /api/user/sessions
- * Get recent login/logout timestamps
- * @param {string} userId - User ID
- * @returns {Promise} Sessions list
+ * MOCKED - POST /api/biometrics/audio/enroll
+ */
+export const enrollVoice = async (data) => {
+  await mockDelay(2000);
+  console.log('MOCK API: Enroll voice', data);
+  return { success: true, enrollmentId: `voice_${Date.now()}`, confidence: 0.95, message: 'Voice biometric enrolled successfully' };
+};
+
+/**
+ * MOCKED - GET /api/user/sessions
  */
 export const getUserSessions = async (userId) => {
   await mockDelay(800);
-  console.log('API: Get user sessions', userId);
-  
+  console.log('MOCK API: Get user sessions for', userId);
   return {
     success: true,
     sessions: [
-      {
-        sessionId: 'session_001',
-        loginTime: new Date(Date.now() - 3600000).toISOString(),
-        logoutTime: new Date(Date.now() - 1800000).toISOString(),
-        method: 'face',
-        device: 'Chrome on MacOS',
-      },
-      {
-        sessionId: 'session_002',
-        loginTime: new Date(Date.now() - 86400000).toISOString(),
-        logoutTime: new Date(Date.now() - 82800000).toISOString(),
-        method: 'voice',
-        device: 'Safari on iOS',
-      },
+      { sessionId: 'session_001', loginTime: new Date(Date.now() - 3600000).toISOString(), logoutTime: new Date(Date.now() - 1800000).toISOString(), method: 'face', device: 'Chrome on MacOS' },
+      { sessionId: 'session_002', loginTime: new Date(Date.now() - 86400000).toISOString(), logoutTime: new Date(Date.now() - 82800000).toISOString(), method: 'voice', device: 'Safari on iOS' },
     ],
   };
 };
 
 /**
- * POST /api/tools/generate-password
- * Generate a secure password
- * @param {Object} options - { length, includeSymbols, includeNumbers }
- * @returns {Promise} Generated password
+ * MOCKED - POST /api/tools/generate-password
  */
 export const generatePassword = async (options) => {
   await mockDelay(300);
-  
   const length = options.length || 16;
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const numbers = '0123456789';
-  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-  
-  let chars = charset;
-  if (options.includeNumbers) chars += numbers;
-  if (options.includeSymbols) chars += symbols;
-  
+  let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (options.includeNumbers) chars += '0123456789';
+  if (options.includeSymbols) chars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
   let password = '';
   for (let i = 0; i < length; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
-  return {
-    success: true,
-    password,
-    strength: 'Strong',
-  };
+  return { success: true, password, strength: 'Strong' };
 };
 
 /**
- * POST /api/data/export
- * Export encrypted vault data
- * @param {string} userId - User ID
- * @returns {Promise} Encrypted data
+ * MOCKED - POST /api/data/export
  */
 export const exportVaultData = async (userId) => {
   await mockDelay(1000);
-  
-  return {
-    success: true,
-    data: btoa(JSON.stringify({
-      userId,
-      exportDate: new Date().toISOString(),
-      entries: [],
-      encrypted: true,
-    })),
-    filename: `biovault_export_${Date.now()}.json`,
-  };
+  return { success: true, data: btoa(JSON.stringify({ userId, exportDate: new Date().toISOString(), entries: [] })), filename: `biovault_export_${Date.now()}.json` };
 };
 
 /**
- * POST /api/data/import
- * Import encrypted vault data
- * @param {Object} data - Encrypted vault data
- * @returns {Promise} Import result
+ * MOCKED - POST /api/data/import
  */
 export const importVaultData = async (data) => {
   await mockDelay(1500);
-  
-  return {
-    success: true,
-    importedCount: 0,
-    message: 'Data imported successfully',
-  };
+  return { success: true, importedCount: 0, message: 'Data imported successfully' };
 };
 
 /**
- * DELETE /api/biometrics/delete
- * Delete biometric data
- * @param {Object} data - { userId, method }
- * @returns {Promise} Deletion response
+ * MOCKED - DELETE /api/biometrics/delete
  */
 export const deleteBiometricData = async (data) => {
   await mockDelay(1000);
-  
-  return {
-    success: true,
-    message: 'Biometric data deleted successfully',
-  };
+  return { success: true, message: 'Biometric data deleted successfully' };
 };
 
 /**
- * PUT /api/settings/update
- * Update user settings
- * @param {Object} settings - User settings
- * @returns {Promise} Update response
+ * MOCKED - PUT /api/settings/update
  */
 export const updateSettings = async (settings) => {
   await mockDelay(800);
-  
-  return {
-    success: true,
-    settings,
-    message: 'Settings updated successfully',
-  };
+  return { success: true, settings, message: 'Settings updated successfully' };
 };
 
 export default apiClient;

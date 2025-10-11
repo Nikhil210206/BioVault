@@ -1,2 +1,4 @@
 com/biovault/UserController$UnlockRequest.class
+com/biovault/UserController$LoginRequest.class
+com/biovault/UserController$LoginResponse.class
 com/biovault/UserController$UnlockResponse.class
