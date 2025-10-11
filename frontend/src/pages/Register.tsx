@@ -55,18 +55,24 @@ const Register = () => {
         setUserId(response.userId.toString());
         setStep("biometric-choice");
         addToast("success", "Account created successfully!");
-      } else {
-        addToast("error", "Registration failed. Please try again.");
+      } 
+      // This else block is important for cases where the server returns a non-error but unsuccessful response
+      else if (response.message) {
+         addToast("error", response.message);
       }
-    } catch (error) {
-      addToast("error", "Registration failed. Please try again.");
+      
+    } catch (error: any) {
+      // *** THIS IS THE KEY CHANGE ***
+      // This catch block handles network errors and specific messages from the backend
+      const errorMessage = error?.message || "Registration failed. Please try again.";
+      addToast("error", errorMessage);
     }
   };
 
   const handleBiometricChoice = (choice: "face" | "voice" | "both" | "skip") => {
     if (choice === "skip") {
       setStep("complete");
-    } else if (choice === "face" || choice === "both") { // *** THIS IS THE FIX ***
+    } else if (choice === "face" || choice === "both") {
       setStep("enroll-face");
     } else if (choice === "voice") {
       setStep("enroll-voice");
