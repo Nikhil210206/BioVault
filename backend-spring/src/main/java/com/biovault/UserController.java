@@ -49,27 +49,25 @@ public class UserController {
     }
 
     @PostMapping("/biometrics/face/enroll")
-    public Mono<ResponseEntity<?>> enrollFace(@RequestBody EnrollFaceRequest request) {
+    public Mono<ResponseEntity<Map>> enrollFace(@RequestBody EnrollFaceRequest request) {
         return this.webClient.post()
             .uri("/enroll")
             .bodyValue(request)
             .retrieve()
-            .onStatus(HttpStatus::isError, clientResponse ->
-                clientResponse.bodyToMono(Map.class)
-                    .flatMap(errorBody -> {
-                        String errorMessage = (String) errorBody.getOrDefault("message", "Unknown error from face service");
-                        return Mono.error(new RuntimeException(errorMessage));
-                    })
+            .onStatus(HttpStatus::isError, clientResponse -> 
+                clientResponse.bodyToMono(Map.class).flatMap(errorBody -> 
+                    Mono.error(new RuntimeException("Face enrollment failed: " + errorBody.get("message")))
+                )
             )
             .toEntity(Map.class)
             .flatMap(responseEntity -> {
-                userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
-                return Mono.just(ResponseEntity.ok(responseEntity.getBody()));
+                if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                    userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
+                }
+                return Mono.just(responseEntity);
             })
-            .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "error", "message", e.getMessage()))))
-            .cast(ResponseEntity.class);
+            .doOnError(throwable -> System.err.println("Error during face enrollment: " + throwable.getMessage()));
     }
-
 
     @PostMapping("/auth/unlock")
     public ResponseEntity<?> unlock(@RequestBody UnlockRequest request) {
@@ -84,7 +82,7 @@ public class UserController {
             return ResponseEntity.badRequest().body(new UnlockResponse(false, 0.0, null));
         }
     }
-
+    
     // Inner classes for Request/Response bodies
     public static class EnrollFaceRequest {
         private String username;
@@ -94,7 +92,7 @@ public class UserController {
         public String getFaceEmbedding() { return faceEmbedding; }
         public void setFaceEmbedding(String faceEmbedding) { this.faceEmbedding = faceEmbedding; }
     }
-
+    
     public static class RegisterRequest {
         private String name;
         private String email;
@@ -149,7 +147,7 @@ public class UserController {
         public String getUsername() { return username; }
         public String getToken() { return token; }
     }
-
+    
     public static class UnlockRequest {
         private String username;
         private String method;
