@@ -5,12 +5,12 @@ import { enrollVoice } from "@/lib/apiClient";
 import { modalSlide, buttonTap, waveformBar, useMotionSafe, checkmarkDraw } from "@/lib/motionSystem";
 
 interface EnrollVoiceProps {
-  userId: string;
+  username: string;
   onComplete: (success: boolean) => void;
   onSkip: () => void;
 }
 
-const EnrollVoice = ({ userId, onComplete, onSkip }: EnrollVoiceProps) => {
+const EnrollVoice = ({ username, onComplete, onSkip }: EnrollVoiceProps) => {
   const [step, setStep] = useState<"prompt" | "recording" | "recorded" | "processing" | "success" | "error">("prompt");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -108,7 +108,7 @@ const EnrollVoice = ({ userId, onComplete, onSkip }: EnrollVoiceProps) => {
         const base64Audio = reader.result?.toString().split(",")[1] || "";
 
         const response = await enrollVoice({
-          userId,
+          username: username,
           audioEmbedding: base64Audio,
           metadata: {
             duration: recordingTime,

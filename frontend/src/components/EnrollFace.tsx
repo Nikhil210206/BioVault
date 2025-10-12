@@ -5,12 +5,12 @@ import { enrollFace } from "@/lib/apiClient";
 import { modalSlide, buttonTap, pulse, useMotionSafe, checkmarkDraw } from "@/lib/motionSystem";
 
 interface EnrollFaceProps {
-  userId: string;
+  username: string;
   onComplete: (success: boolean) => void;
   onSkip: () => void;
 }
 
-const EnrollFace = ({ userId, onComplete, onSkip }: EnrollFaceProps) => {
+const EnrollFace = ({ username, onComplete, onSkip }: EnrollFaceProps) => {
   const [step, setStep] = useState<"preview" | "captured" | "processing" | "success" | "error">("preview");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -73,28 +73,22 @@ const EnrollFace = ({ userId, onComplete, onSkip }: EnrollFaceProps) => {
     setStep("processing");
 
     try {
-      // Simulate embedding generation (in production, use face recognition SDK)
       const faceEmbedding = capturedImage?.split(",")[1] || "";
       
       const response = await enrollFace({
-        userId,
-        faceEmbedding,
-        metadata: {
-          device: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-          captureMethod: "webcam",
-        },
+        username,
+        faceEmbedding
       });
 
-      if (response.success) {
+      if (response.status === "success") {
         setStep("success");
         setTimeout(() => onComplete(true), 2000);
       } else {
-        setErrorMessage("Enrollment failed. Please try again.");
+        setErrorMessage(response.message || "Enrollment failed. Please try again.");
         setStep("error");
       }
-    } catch (error) {
-      setErrorMessage("Network error. Please check your connection.");
+    } catch (error: any) {
+      setErrorMessage(error.message || "Network error. Please check your connection.");
       setStep("error");
     }
   };

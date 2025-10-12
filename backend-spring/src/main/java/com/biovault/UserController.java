@@ -20,7 +20,7 @@ public class UserController {
 
     // Constructor to initialize the WebClient
     public UserController(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:5000").build();
+        this.webClient = webClientBuilder.baseUrl("http://localhost:5001").build();
     }
 
     @PostMapping("/register")
