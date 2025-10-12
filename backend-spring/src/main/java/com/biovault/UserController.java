@@ -63,16 +63,13 @@ public class UserController {
             )
             .toEntity(Map.class)
             .flatMap(responseEntity -> {
-                // This block only executes for successful (2xx) responses
                 userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
-                // Explicitly cast the response to ResponseEntity<?>
-                return Mono.just((ResponseEntity<?>) ResponseEntity.ok(responseEntity.getBody()));
+                return Mono.just(ResponseEntity.ok(responseEntity.getBody()));
             })
-            .onErrorResume(e -> {
-                // This catches the error thrown from onStatus or any other WebClient error
-                return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "error", "message", e.getMessage())));
-            });
+            .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "error", "message", e.getMessage()))))
+            .cast(ResponseEntity.class);
     }
+
 
     @PostMapping("/auth/unlock")
     public ResponseEntity<?> unlock(@RequestBody UnlockRequest request) {
