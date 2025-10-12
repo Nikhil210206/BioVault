@@ -42,4 +42,12 @@ public class UserService {
     public User unlockUser(String username) {
         return userRepository.findByUsername(username);
     }
+
+    public void storeFaceEmbeddingPath(String username, String path) {
+        User user = userRepository.findByUsername(username);
+        if (user != null) {
+            user.setFaceEmbeddingPath(path);
+            userRepository.save(user);
+        }
+    }
 }

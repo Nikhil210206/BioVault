@@ -15,7 +15,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { shouldReduce } = useMotionSafe();
   const [step, setStep] = useState<"form" | "biometric-choice" | "enroll-face" | "enroll-voice" | "complete">("form");
-  const [userId, setUserId] = useState<string>("");
+  const [registeredUsername, setRegisteredUsername] = useState<string>(""); // Holds username after registration
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   const [formData, setFormData] = useState({
@@ -48,23 +48,18 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         username: formData.username,
-        passwordHash: btoa(formData.password), // Base64 encode the password or an empty string
+        passwordHash: btoa(formData.password),
       });
 
       if (response.success && response.userId) {
-        setUserId(response.userId.toString());
+        setRegisteredUsername(formData.username); // Save username to state
         setStep("biometric-choice");
         addToast("success", "Account created successfully!");
-      } 
-      // This else block is important for cases where the server returns a non-error but unsuccessful response
-      else if (response.message) {
-         addToast("error", response.message);
+      } else {
+        addToast("error", response.message || "Registration failed. Please try again.");
       }
-      
     } catch (error: any) {
-      // *** THIS IS THE KEY CHANGE ***
-      // This catch block handles network errors and specific messages from the backend
-      const errorMessage = error?.message || "Registration failed. Please try again.";
+      const errorMessage = error?.message || "An unexpected error occurred. Please try again.";
       addToast("error", errorMessage);
     }
   };
@@ -82,11 +77,8 @@ const Register = () => {
   const handleFaceEnrollComplete = (success: boolean) => {
     if (success) {
       addToast("success", "Face biometric enrolled!");
-      setStep("enroll-voice");
-    } else {
-        // If they fail face enrollment, give them an option to skip to the end
-        setStep("complete");
     }
+    setStep("enroll-voice");
   };
 
   const handleVoiceEnrollComplete = (success: boolean) => {
@@ -97,11 +89,10 @@ const Register = () => {
   };
 
   const handleSkipBiometric = () => {
-    // This function can be used to skip from either face or voice enrollment
     if (step === 'enroll-face') {
-        setStep('enroll-voice'); // Skip to the next biometric step
+      setStep('enroll-voice');
     } else {
-        setStep('complete'); // Skip to the final step
+      setStep('complete');
     }
   };
 
@@ -268,7 +259,7 @@ const Register = () => {
                 className="bg-card rounded-2xl shadow-[var(--shadow-elevated)] p-8"
               >
                 <EnrollFace
-                  userId={userId}
+                  username={registeredUsername}
                   onComplete={handleFaceEnrollComplete}
                   onSkip={handleSkipBiometric}
                 />
@@ -282,7 +273,7 @@ const Register = () => {
                 className="bg-card rounded-2xl shadow-[var(--shadow-elevated)] p-8"
               >
                 <EnrollVoice
-                  userId={userId}
+                  username={registeredUsername}
                   onComplete={handleVoiceEnrollComplete}
                   onSkip={handleSkipBiometric}
                 />

@@ -24,8 +24,18 @@ public class User {
     
     private String passwordHash;
 
+    private String faceEmbeddingPath; // Add this line
+
     // getters and setters
 
+    public String getFaceEmbeddingPath() { // Add this getter
+        return faceEmbeddingPath;
+    }
+
+    public void setFaceEmbeddingPath(String faceEmbeddingPath) { // Add this setter
+        this.faceEmbeddingPath = faceEmbeddingPath;
+    }
+    
     public Long getId() {
         return id;
     }

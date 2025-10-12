@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono; // <<< ADD THIS IMPORT
+import java.util.Map; // <<< ADD THIS IMPORT
 
 @RestController
 @RequestMapping("/api")
@@ -13,21 +16,25 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    private final WebClient webClient;
+
+    // Constructor to initialize the WebClient
+    public UserController(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.baseUrl("http://localhost:5000").build();
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User user = userService.registerUser(request.getName(), request.getEmail(), request.getUsername(), request.getPasswordHash());
             return ResponseEntity.ok(new RegisterResponse(true, user.getId(), "Registration successful!"));
         } catch (IllegalStateException e) {
-            // *** THIS IS THE KEY CHANGE ***
-            // Catch the specific error and return a 409 Conflict status with the message
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new RegisterResponse(false, null, e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new RegisterResponse(false, null, "An unexpected error occurred."));
         }
     }
 
-    // ... (login and unlock methods remain the same)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
@@ -40,6 +47,24 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new LoginResponse(false, null, null, null));
         }
+    }
+
+    @PostMapping("/biometrics/face/enroll")
+    public Mono<ResponseEntity<?>> enrollFace(@RequestBody EnrollFaceRequest request) {
+        // Forward the request to the Python service
+        return this.webClient.post()
+            .uri("/enroll")
+            .bodyValue(request)
+            .retrieve()
+            .toEntity(Map.class)
+            .flatMap(responseEntity -> {
+                if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                    // If Python server is successful, save the path in our database
+                    userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
+                }
+                // Forward the response from the Python server back to the frontend
+                return Mono.just(responseEntity);
+            });
     }
 
     @PostMapping("/auth/unlock")
@@ -55,10 +80,17 @@ public class UserController {
             return ResponseEntity.badRequest().body(new UnlockResponse(false, 0.0, null));
         }
     }
-
-
+    
     // Inner classes for Request/Response bodies
-
+    public static class EnrollFaceRequest {
+        private String username;
+        private String faceEmbedding; // This is the base64 image data
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getFaceEmbedding() { return faceEmbedding; }
+        public void setFaceEmbedding(String faceEmbedding) { this.faceEmbedding = faceEmbedding; }
+    }
+    
     public static class RegisterRequest {
         private String name;
         private String email;

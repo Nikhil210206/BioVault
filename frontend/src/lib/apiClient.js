@@ -70,13 +70,17 @@ export const unlockVault = async (data) => {
 const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * MOCKED - POST /api/biometrics/face/enroll
+ * POST /api/biometrics/face/enroll
+ * Sends face data to the Spring Boot backend, which forwards to Python
+ * @param {Object} data - { username, faceEmbedding: base64 }
+ * @returns {Promise} Enrollment response
  */
 export const enrollFace = async (data) => {
-  await mockDelay(1500);
-  console.log('MOCK API: Enroll face', data);
-  return { success: true, enrollmentId: `face_${Date.now()}`, confidence: 0.98, message: 'Face biometric enrolled successfully' };
+  // This is now a real API call to your Spring Boot backend
+  const response = await apiClient.post('/biometrics/face/enroll', data);
+  return response.data;
 };
+
 
 /**
  * MOCKED - POST /api/biometrics/audio/enroll
