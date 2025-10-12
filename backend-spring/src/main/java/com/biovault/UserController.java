@@ -5,8 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono; // <<< ADD THIS IMPORT
-import java.util.Map; // <<< ADD THIS IMPORT
+import reactor.core.publisher.Mono;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -18,7 +18,6 @@ public class UserController {
 
     private final WebClient webClient;
 
-    // Constructor to initialize the WebClient
     public UserController(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl("http://localhost:5001").build();
     }
@@ -51,19 +50,27 @@ public class UserController {
 
     @PostMapping("/biometrics/face/enroll")
     public Mono<ResponseEntity<?>> enrollFace(@RequestBody EnrollFaceRequest request) {
-        // Forward the request to the Python service
         return this.webClient.post()
             .uri("/enroll")
             .bodyValue(request)
             .retrieve()
+            .onStatus(HttpStatus::isError, clientResponse ->
+                clientResponse.bodyToMono(Map.class)
+                    .flatMap(errorBody -> {
+                        String errorMessage = (String) errorBody.getOrDefault("message", "Unknown error from face service");
+                        return Mono.error(new RuntimeException(errorMessage));
+                    })
+            )
             .toEntity(Map.class)
             .flatMap(responseEntity -> {
-                if (responseEntity.getStatusCode().is2xxSuccessful()) {
-                    // If Python server is successful, save the path in our database
-                    userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
-                }
-                // Forward the response from the Python server back to the frontend
-                return Mono.just(responseEntity);
+                // This block only executes for successful (2xx) responses
+                userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
+                // Explicitly cast the response to ResponseEntity<?>
+                return Mono.just((ResponseEntity<?>) ResponseEntity.ok(responseEntity.getBody()));
+            })
+            .onErrorResume(e -> {
+                // This catches the error thrown from onStatus or any other WebClient error
+                return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "error", "message", e.getMessage())));
             });
     }
 
@@ -80,17 +87,17 @@ public class UserController {
             return ResponseEntity.badRequest().body(new UnlockResponse(false, 0.0, null));
         }
     }
-    
+
     // Inner classes for Request/Response bodies
     public static class EnrollFaceRequest {
         private String username;
-        private String faceEmbedding; // This is the base64 image data
+        private String faceEmbedding;
         public String getUsername() { return username; }
         public void setUsername(String username) { this.username = username; }
         public String getFaceEmbedding() { return faceEmbedding; }
         public void setFaceEmbedding(String faceEmbedding) { this.faceEmbedding = faceEmbedding; }
     }
-    
+
     public static class RegisterRequest {
         private String name;
         private String email;
@@ -145,7 +152,7 @@ public class UserController {
         public String getUsername() { return username; }
         public String getToken() { return token; }
     }
-    
+
     public static class UnlockRequest {
         private String username;
         private String method;
