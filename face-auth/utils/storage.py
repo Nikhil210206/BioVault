@@ -11,8 +11,8 @@ MONGO_PORT = 27017
 MONGO_DB_NAME = "biovault"
 # -----------------------------------------
 
-# Construct the connection string
-MONGO_URI = f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/"
+# Construct the connection string with the authentication source
+MONGO_URI = f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB_NAME}?authSource=admin"
 
 # MongoDB connection
 try:
