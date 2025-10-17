@@ -1,10 +1,5 @@
-- [x] Create backend-spring directory
-- [x] Create pom.xml with Spring Boot dependencies (web, data-jpa, mysql-connector-java)
-- [x] Create src/main/java/com/biovault/BioVaultApplication.java
-- [x] Create src/main/resources/application.properties with JDBC config
-- [x] Create User.java entity
-- [x] Create UserRepository.java
-- [x] Create UserService.java
-- [x] Create UserController.java with /register endpoint
-- [x] Update frontend/src/lib/apiClient.js baseURL to http://localhost:8080
-- [x] Test the connection
+# TODO: Connect Python Backend with MongoDB for Biometric Storage
+
+- [x] Update requirements.txt to include pymongo
+- [x] Edit face-auth/utils/storage.py to use MongoDB for storing encrypted embeddings
+- [ ] Test the enrollment and verification endpoints

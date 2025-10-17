@@ -60,12 +60,6 @@ public class UserController {
                 )
             )
             .toEntity(Map.class)
-            .flatMap(responseEntity -> {
-                if (responseEntity.getStatusCode().is2xxSuccessful()) {
-                    userService.storeFaceEmbeddingPath(request.getUsername(), "data/known_faces/" + request.getUsername() + ".jpg");
-                }
-                return Mono.just(responseEntity);
-            })
             .doOnError(throwable -> System.err.println("Error during face enrollment: " + throwable.getMessage()));
     }
 
