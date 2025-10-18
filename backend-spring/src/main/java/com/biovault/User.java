@@ -22,7 +22,8 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
     
-    private String passwordHash;
+    private String otp;
+    private java.sql.Timestamp otpExpiry;
 
     // getters and setters
 
@@ -58,11 +59,19 @@ public class User {
         this.username = username;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getOtp() {
+        return otp;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setOtp(String otp) {
+        this.otp = otp;
+    }
+
+    public java.sql.Timestamp getOtpExpiry() {
+        return otpExpiry;
+    }
+
+    public void setOtpExpiry(java.sql.Timestamp otpExpiry) {
+        this.otpExpiry = otpExpiry;
     }
 }

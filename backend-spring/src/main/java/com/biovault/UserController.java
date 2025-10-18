@@ -25,7 +25,7 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            User user = userService.registerUser(request.getName(), request.getEmail(), request.getUsername(), request.getPasswordHash());
+            User user = userService.registerUser(request.getName(), request.getEmail(), request.getUsername());
             return ResponseEntity.ok(new RegisterResponse(true, user.getId(), "Registration successful!"));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new RegisterResponse(false, null, e.getMessage()));
@@ -34,10 +34,32 @@ public class UserController {
         }
     }
 
+    @PostMapping("/request-otp")
+    public ResponseEntity<?> requestOtp(@RequestBody RequestOtpRequest request) {
+        try {
+            User user = userService.findByEmail(request.getEmail());
+            if (user == null) {
+                return ResponseEntity.status(404).body(new RequestOtpResponse(false, "Email not found"));
+            }
+            // Call Python script
+            ProcessBuilder pb = new ProcessBuilder("python3", "otp_script.py", request.getEmail());
+            pb.directory(new java.io.File("backend-spring"));
+            Process p = pb.start();
+            int exitCode = p.waitFor();
+            if (exitCode == 0) {
+                return ResponseEntity.ok(new RequestOtpResponse(true, "OTP sent to email"));
+            } else {
+                return ResponseEntity.status(500).body(new RequestOtpResponse(false, "Failed to send OTP"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new RequestOtpResponse(false, "Error requesting OTP"));
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            User user = userService.loginUser(request.getUsername(), request.getPasswordHash());
+            User user = userService.loginUser(request.getEmail(), request.getOtp());
             if (user != null) {
                 return ResponseEntity.ok(new LoginResponse(true, user.getId(), user.getUsername(), "token_" + System.currentTimeMillis()));
             } else {
@@ -91,15 +113,12 @@ public class UserController {
         private String name;
         private String email;
         private String username;
-        private String passwordHash;
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
         public String getUsername() { return username; }
         public void setUsername(String username) { this.username = username; }
-        public String getPasswordHash() { return passwordHash; }
-        public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     }
 
     public static class RegisterResponse {
@@ -117,12 +136,12 @@ public class UserController {
     }
 
     public static class LoginRequest {
-        private String username;
-        private String passwordHash;
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-        public String getPasswordHash() { return passwordHash; }
-        public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+        private String email;
+        private String otp;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getOtp() { return otp; }
+        public void setOtp(String otp) { this.otp = otp; }
     }
 
     public static class LoginResponse {
@@ -166,5 +185,22 @@ public class UserController {
         public boolean isSuccess() { return success; }
         public double getConfidence() { return confidence; }
         public String getToken() { return token; }
+    }
+
+    public static class RequestOtpRequest {
+        private String email;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    public static class RequestOtpResponse {
+        private boolean success;
+        private String message;
+        public RequestOtpResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
     }
 }

@@ -46,7 +46,15 @@ export const registerUser = async (userData) => {
 };
 
 /**
- * POST /api/login - Log in a user
+ * POST /api/request-otp - Request OTP for login
+ */
+export const requestOtp = async (data) => {
+  const response = await apiClient.post('/request-otp', data);
+  return response.data;
+};
+
+/**
+ * POST /api/login - Log in a user with OTP
  */
 export const loginUser = async (credentials) => {
   const response = await apiClient.post('/login', credentials);

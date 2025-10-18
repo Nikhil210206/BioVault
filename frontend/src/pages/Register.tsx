@@ -22,7 +22,6 @@ const Register = () => {
     name: "",
     email: "",
     username: "",
-    password: "",
     agreeToTerms: false,
   });
 
@@ -48,7 +47,6 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         username: formData.username,
-        passwordHash: btoa(formData.password),
       });
 
       if (response.success && response.userId) {
@@ -158,21 +156,7 @@ const Register = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Password (Optional)
-                    </label>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="Leave empty for biometric-only"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Recommended: Set a fallback password in case biometric fails.
-                    </p>
-                  </div>
+
 
                   <div className="flex items-start gap-2">
                     <input
