@@ -16,8 +16,8 @@ DB_PASSWORD = "biovault"
 # Email settings (configure as needed, e.g., Gmail)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USER = "your_email@gmail.com"  # Replace with your email
-SMTP_PASSWORD = "your_app_password"  # Replace with app password
+SMTP_USER = "biovault1@gmail.com"  # Your updated email
+SMTP_PASSWORD = "ljet suqy uwxf ryyh"  # Your updated app password
 
 def generate_otp():
     return str(random.randint(100000, 999999))
