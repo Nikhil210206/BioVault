@@ -76,6 +76,24 @@ export const enrollFace = async (data: { username: string; faceEmbedding: string
     return response.data;
 };
 
+// --- NEW FACE UNLOCK FUNCTION ---
+/**
+ * POST /api/auth/unlock (using face method) - Unlocks vault via face
+ * @param {string} username - The username.
+ * @param {string} faceEmbedding - The Base64 encoded face *image* for verification.
+ * @returns {Promise} Unlock response
+ */
+export const unlockVaultWithFace = async (username: string, faceEmbedding: string) => {
+    console.log("Attempting face unlock for:", username);
+    const response = await apiClient.post('/api/auth/unlock', {
+        username: username,
+        method: "face",
+        proof: faceEmbedding // 'proof' field contains the Base64 image string
+    });
+    return response.data;
+};
+
+
 // --- VOICE ENROLLMENT FUNCTION (MOCK - needs backend implementation) ---
 /**
  * POST /api/biometrics/audio/enroll - Enrolls a user's voice (Mocked)

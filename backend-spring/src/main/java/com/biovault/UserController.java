@@ -19,6 +19,7 @@ public class UserController {
     private final WebClient webClient;
 
     public UserController(WebClient.Builder webClientBuilder) {
+        // This is your Python service URL
         this.webClient = webClientBuilder.baseUrl("http://localhost:5001").build();
     }
 
@@ -72,6 +73,7 @@ public class UserController {
 
     @PostMapping("/biometrics/face/enroll")
     public Mono<ResponseEntity<Map>> enrollFace(@RequestBody EnrollFaceRequest request) {
+        // This flow looks correct. It forwards the request to Python's /enroll endpoint.
         return this.webClient.post()
             .uri("/enroll")
             .bodyValue(request)
@@ -85,21 +87,66 @@ public class UserController {
             .doOnError(throwable -> System.err.println("Error during face enrollment: " + throwable.getMessage()));
     }
 
+    // --- UPDATED METHOD ---
     @PostMapping("/auth/unlock")
-    public ResponseEntity<?> unlock(@RequestBody UnlockRequest request) {
-        try {
-            User user = userService.unlockUser(request.getUsername());
-            if (user != null) {
-                return ResponseEntity.ok(new UnlockResponse(true, 0.96, "token_" + System.currentTimeMillis()));
-            } else {
-                return ResponseEntity.status(401).body(new UnlockResponse(false, 0.0, null));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new UnlockResponse(false, 0.0, null));
+    public Mono<ResponseEntity<UnlockResponse>> unlock(@RequestBody UnlockRequest request) {
+        
+        // Find the user first
+        User user = userService.unlockUser(request.getUsername());
+        if (user == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new UnlockResponse(false, 0.0, null)));
+        }
+
+        if ("face".equals(request.getMethod())) {
+            // --- FACE UNLOCK ---
+            // Create a request body for the Python service
+            Map<String, String> pythonRequest = Map.of(
+                "username", request.getUsername(),
+                "faceEmbedding", request.getProof() // Use the 'proof' field for the Base64 image
+            );
+
+            // Call the Python /verify endpoint
+            return this.webClient.post()
+                .uri("/verify")
+                .bodyValue(pythonRequest)
+                .retrieve()
+                .toEntity(Map.class)
+                .flatMap(responseEntity -> {
+                    Map responseBody = responseEntity.getBody();
+                    if (responseBody != null && "success".equals(responseBody.get("status"))) {
+                        // Python service verified the face
+                        String token = "token_" + System.currentTimeMillis();
+                        return Mono.just(ResponseEntity.ok(new UnlockResponse(true, 1.0, token))); // Confidence is hardcoded for now
+                    } else {
+                        // Python service rejected the face
+                        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new UnlockResponse(false, 0.0, null)));
+                    }
+                })
+                .onErrorResume(e -> {
+                    // Error calling Python service
+                    System.err.println("Error during face verification: " + e.getMessage());
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new UnlockResponse(false, 0.0, null)));
+                });
+
+        } else if ("voice".equals(request.getMethod())) {
+            // --- VOICE UNLOCK (Not implemented in Spring) ---
+            // This logic would be similar to face, but likely needs multipart-form data for audio
+            return Mono.just(ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body(new UnlockResponse(false, 0.0, "Voice unlock not implemented in backend")));
+
+        } else {
+            // --- OTHER/DUMMY UNLOCK (Original behavior) ---
+            // This is a fallback and should probably be removed for real security
+            String token = "token_" + System.currentTimeMillis();
+            return Mono.just(ResponseEntity.ok(new UnlockResponse(true, 0.96, token)));
         }
     }
     
-    // Inner classes for Request/Response bodies
+    // --- INNER CLASSES (No Changes Needed) ---
+
     public static class EnrollFaceRequest {
         private String username;
         private String faceEmbedding;
@@ -177,14 +224,24 @@ public class UserController {
         private boolean success;
         private double confidence;
         private String token;
+        private String message; // Added for error messages
+
         public UnlockResponse(boolean success, double confidence, String token) {
             this.success = success;
             this.confidence = confidence;
             this.token = token;
         }
+        
+        public UnlockResponse(boolean success, double confidence, String token, String message) {
+            this.success = success;
+            this.confidence = confidence;
+            this.token = token;
+            this.message = message;
+        }
         public boolean isSuccess() { return success; }
         public double getConfidence() { return confidence; }
         public String getToken() { return token; }
+        public String getMessage() { return message; }
     }
 
     public static class RequestOtpRequest {

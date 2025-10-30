@@ -1,3 +1,9 @@
+import os
+import face_recognition_models
+
+# ✅ Force set the model path manually (macOS fix)
+os.environ["FACE_RECOGNITION_MODELS"] = face_recognition_models.__path__[0]
+
 import face_recognition
 import numpy as np
 from utils import storage

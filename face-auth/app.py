@@ -4,6 +4,9 @@ import base64
 from face_module import enroll_face, verify_face
 
 app = Flask(__name__)
+@app.route('/')
+def home():
+    return "🚀 Face Auth API is running successfully!"
 
 # Ensure the directory for known faces exists
 if not os.path.exists("data/known_faces"):
